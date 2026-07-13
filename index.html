@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mediensack Karteikarten</title>
+    <style>
+        :root {
+            --primary: #4A90E2;
+            --success: #4CAF50;
+            --danger: #F44336;
+            --bg: #f4f7f6;
+            --card-bg: #ffffff;
+            --text: #333333;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        header {
+            padding: 15px 20px;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .header-title {
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .settings {
+            display: flex;
+            gap: 15px;
+        }
+
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            border-radius: 20px;
+            transition: .4s;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px; width: 16px;
+            left: 2px; bottom: 2px;
+            background-color: white;
+            border-radius: 50%;
+            transition: .4s;
+        }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        .card-container {
+            flex-grow: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
+
+        .card {
+            width: 85%;
+            max-width: 380px;
+            height: 65%;
+            max-height: 500px;
+            position: absolute;
+            perspective: 1000px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .card-inner {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .card.animated .card-inner {
+            transition: transform 0.5s;
+        }
+
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 25px;
+            text-align: center;
+            font-size: 20px;
+            background: var(--card-bg);
+            border-radius: 20px;
+            border: 2px solid transparent;
+            overflow-y: auto;
+        }
+
+        .card-front {
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+            font-size: 16px;
+            line-height: 1.5;
+            color: #444;
+            align-items: flex-start;
+            text-align: left;
+        }
+
+        .controls {
+            padding: 10px 20px 30px 20px;
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+        }
+
+        .btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: none;
+            font-size: 30px;
+            color: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn.animated {
+            transition: transform 0.2s;
+        }
+
+        .btn:active {
+            transform: scale(0.9);
+        }
+
+        .btn-wrong { background-color: var(--danger); }
+        .btn-correct { background-color: var(--success); }
+
+        .status {
+            text-align: center;
+            font-size: 14px;
+            color: #888;
+            margin-top: 10px;
+        }
+        
+        .end-message {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #555;
+            padding: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-title">Mediensack</div>
+        <div class="settings">
+            <div class="toggle-group">
+                Zufall
+                <label class="switch">
+                    <input type="checkbox" id="shuffleToggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="toggle-group">
+                Animation
+                <label class="switch">
+                    <input type="checkbox" id="animToggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    </header>
+
+    <div class="status" id="statusText">Karte 1 / x</div>
+
+    <div class="card-container" id="cardContainer">
+        <div class="end-message" id="endMessage">
+            🎉 Geschafft!<br><br>
+            <button onclick="location.reload()" style="padding: 10px 20px; font-size: 16px; border-radius: 8px; border: none; background: var(--primary); color: white; margin-top: 20px;">Neustart</button>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-wrong animated" id="btnWrong">✖</button>
+        <button class="btn btn-correct animated" id="btnCorrect">✔</button>
+    </div>
+
+    <script>
+        const originalCards = [
+            // --- ORALITÄT ---
+            { q: "Wie stand Platon zur Erfindung der Schrift?", a: "Er äußerte große Skepsis. Er glaubte, die Schrift mache die Seele vergesslich, da das Gedächtnis nicht mehr geübt werde und man sich nur auf fremde Zeichen verlasse." },
+            { q: "Wie funktionierten orale Kulturen laut Eric Havelock?", a: "Wichtige Informationen wurden in Erzählungen verpackt. Oralität ist bildhaft, emotional, unpersönlich (kein autonomes Ich), verträglich (keine großen Auseinandersetzungen) sowie moralisch und sozial." },
+            { q: "Wie wird in oralen Kulturen gedacht und gelernt?", a: "Es herrscht eine traditionalistische/konservative Denkweise durch Wiederholungen. Geistige Arbeit ist vor allem Erinnerungsarbeit (nicht spekulativ). Wissen entsteht aus Lebenserfahrung und dem Denken folgt meist Handeln." },
+            { q: "Was fehlt oralen Kulturen im Vergleich zu Schriftkulturen?", a: "Ihnen fehlt die Fähigkeit zur Abstraktion und zum kausalen Denken (Was passiert wann?). Zudem mangelt es an Objektivität und kritischer Distanz." },
+            { q: "Was versteht man unter 'sekundärer Oralität'?", a: "Eine durch elektronische Medien (Radio, TV, Internet) geprägte Form, in der das Hören wieder wichtig wird. Sie bedarf der Medien, kommt aber ohne Schrift und Buchdruck nicht aus." },
+            { q: "Was unterscheidet das Hören vom Sehen?", a: "Das Hören ist sehr viel feiner und kann viele Facetten des Gesagten erkennen. Das Sehen erfasst nur die Oberfläche ('Wenn die Welt ein Stück zurücktritt')." },
+            { q: "Was ist 'Noise Cancelling' und in welchen Kontexten wird es laut Maren Haffke genutzt?", a: "Es ist ein technologischer Rückzug aus der akustischen Umwelt durch aktive Unterdrückung von Umgebungsgeräuschen. Kontexte sind Arbeitsumgebungen (Konzentration), Reisen (weniger Störung) und persönliche Zeit (Entspannung)." },
+            { q: "Welche Narrative stecken hinter dem 'Noise Cancelling'?", a: "Bewusster Rückzug und Isolation, Kontrolle und Selbstbestimmung der akustischen Umgebung sowie die Verbesserung der Lebensqualität durch weniger Stress." },
+
+            // --- MANUSKRIPTKULTUR & LITERALITÄT ---
+            { q: "Was zeichnet die Manuskriptkultur aus?", a: "Lautes, langsames und sorgfältiges Lesen zum Einprägen von Wissen. Manuskripte hatten eine geringe Verbreitung, waren selten und genossen große Wertschätzung bei Gelehrten. Es gab viel mündliches Lernen und Lehren." },
+            { q: "Welche Folgen hatte die Erfindung des Buchdrucks (um 1450)?", a: "Serielle Massenproduktion von Büchern. Es entstanden eigenständige/kreative Texte von Autoren sowie eine Buchwirtschaft (Verleger, Drucker, Händler). Das Buch wurde zum universalen Speichermedium." },
+            { q: "Was sagte Martin Luther über die Textkommunikation?", a: "'Sola verba. Sola scriptura' - Kommunikation mit Text." },
+            { q: "Wie verändert sich das Lesen in der heutigen vernetzten Welt?", a: "Der Lesestoff ist grenzenlos, was zu kurzer und wechselnder Aufmerksamkeit führt. Gelesenes wird schlechter erinnert und konzentriertes Lesen am Bildschirm ist (z. B. durch Push-Nachrichten) schwer." },
+            { q: "Was ist die elementare Aufgabe des Schreibens?", a: "Eine eigene Ausdrucksweise zu finden und die einzigartige Innenwelt in einzigartige Worte zu beschreiben." },
+
+            // --- DIGITALITÄT ---
+            { q: "Was kennzeichnet die Digitalität in der Wissenschaft?", a: "Traditionelle Wissenschaftsformen werden überwunden. Der theoriegeleitete Stil weicht einem 'algorithmengeleiteten' Stil ('Too big to know' nach David Weinberger)." },
+            { q: "Was sind die Merkmale und Probleme von KI-Texten (Al-Texte)?", a: "Sie werden nicht von Individuen geschrieben, besitzen keine Semantik, keinen intendierten Sinn und keinen individuellen Ausdruck. Sie basieren auf statistischer Berechnung von Daten, was die Authentizität zu einem großen Problem macht." },
+
+            // --- MEDIEN UND MEDIALITÄT ---
+            { q: "Wie wird 'Medium' grundsätzlich definiert?", a: "Als Vermittler zwischen dem wahrgenommenen Objekt und dem wahrnehmenden Objekt." },
+            { q: "Was bedeuten 'Sprachapriori' und 'Technikapriori'?", a: "Sprachapriori: Sprache ist Erkenntnismedium und Medium des Denkens. Technikapriori: Die Wirkungsvermittlung auf stofflicher Basis (materieller Aspekt des Mediums)." },
+            { q: "Aus welchen vier Eigenschaften setzt sich die 'Medialität' eines Mediums zusammen?", a: "1. Technische Seite. 2. Einbettung in Kultur und Gesellschaft. 3. Zusammenhang mit einem anderen Medium. 4. Besonderheiten bei Kommunikation, Verfügbarkeit und Produktion." },
+            { q: "Welche vier Medien-Funktionen gibt es?", a: "1. Beobachtung (Kameras). 2. Speicherung/Bearbeitung (CDs, Clouds). 3. Übertragung (WLAN, Bluetooth). 4. Kommunikation (Radio, Social Media)." },
+            { q: "Was sind Merkmale von Medien als komplexe Gefüge?", a: "Sie sind technische Transportsysteme, Organisationen mit eigenen Zielen, Erbringer von (dys-)funktionalen Leistungen für die Gesellschaft und soziale Institutionen." },
+            { q: "Wie teilt Harry Pross Medien ein?", a: "Primäre (nur Körper, z.B. Mimik), sekundäre (Technik nur bei Produktion, z.B. Buch), tertiäre (Technik bei Produktion & Rezeption, z.B. TV) und quartäre Medien (hohe Interaktivität/Netze, z.B. WWW)." },
+            { q: "Was sind die fünf Einteilungen nach Inhaltsarten?", a: "Printmedien, Audiophone Medien, Audiovisuelle Medien, Online-/Netzmedien und Szenische Medien (z.B. Theater, Poetry Slam)." },
+
+            // --- BRD-MEDIEN-SYSTEM ---
+            { q: "Welche Rolle spielen Nachrichten- und Mediaagenturen?", a: "Nachrichtenagenturen (staatsfern) verifizieren und selektieren News. Mediaagenturen finanzieren deutsche Medien, verwalten 90% des Werbebudgets und planen Werbung." },
+            { q: "Was sind die aktuellen Herausforderungen für Zeitungen?", a: "Das traditionelle Geschäftsmodell (Koppelung Leser-/Werbemarkt) zerbricht. Sinkende Auflagen und Erlöse führen zu steigender Abhängigkeit von der Werbewirtschaft, da Leute länger am Handy sind." },
+            { q: "Wie ist der Buch- und Zeitschriftenmarkt strukturiert?", a: "Das Buch ist das älteste technische Kommunikationsmedium und ein Kulturgut. Zeitschriften bilden einen extrem heterogenen Markt (ca. 1.500 Titel), der von großen Verlagen dominiert wird, jedoch stark sinkende Auflagen hat." },
+            { q: "Wie funktionieren Film und Rundfunk in Deutschland?", a: "Film braucht viel Kapital, hat hohe Risiken und ist auf Förderung angewiesen; US-Majors dominieren den Kinomarkt. Rundfunk teilt sich in staatsfernen, beitragsfinanzierten Öffentlich-Rechtlichen und werbefinanzierten privaten Rundfunk auf." },
+            { q: "Wie ist die Situation bei digitalen Onlinemedien?", a: "Es herrscht große Marktkonzentration. Plattform-Betreiber teilen sich die Erlöse, Paid Content setzt sich nur langsam durch und der Werbemarkt reicht für Online-Publizistik oft noch nicht aus." },
+            { q: "Was kennzeichnet das Medium 'Brief'?", a: "Er förderte Alphabetisierung und Empfindsamkeit. Er ist asynchron, ein Unikat, schafft soziale Nähe (Briefgeheimnis) und überwindet räumliche Distanz ('written sign of absence')." },
+
+            // --- POLITIK & DEMOKRATIE ---
+            { q: "Welche Aufgaben haben Medien für die Demokratie?", a: "Herstellen von Öffentlichkeit, Information/Meinungsbildung, Bildung/Unterhaltung, Kritik/Kontrolle sowie Partizipation." },
+            { q: "Was besagt das 'Arenamodell' in der politischen Kommunikation?", a: "Politische Akteure kommunizieren über Medien direkt mit Bürgern, um sich zu legitimieren. Dadurch werden klassische journalistische Gatekeeper umgangen und es kommt zu einer Machtverschiebung (z.B. hin zu Influencern)." },
+            { q: "Welche Herausforderungen bringt politische Kommunikation in sozialen Medien?", a: "Filterblasen, Fake News, Desinformations-/Hasskampagnen (Dark-Ads), unethisches Handeln und die Frage, ob Hashtag-Aktivismus wirklichen sozialen Impact hat ('zero social impact')." },
+            { q: "Warum sind Messengerdienste politisch relevant und gefährlich?", a: "Sie sind leistungsfähig, datensparsam und haben eine hohe Reichweite (gut für Mobilisierung). Sie sind aber schwer kontrollierbar, fördern Echokammern und Desinformationskampagnen." },
+            { q: "Was versteht man unter 'Informationskrieg' und 'Tiktok-Logik'?", a: "Informationskrieg ist die gezielte Verbreitung von Desinformation zur Destabilisierung und Wahlmanipulation. Die Tiktok-Logik unterstützt das durch kurze Inhalte, die komplexe Themen auf einfache, emotionale Botschaften reduzieren." },
+
+            // --- MARSHALL MCLUHAN ---
+            { q: "In welche vier Epochen unterteilt Marshall McLuhan die Mediengeschichte?", a: "1. Orale Stammeskultur. 2. Literale Manuskriptkultur. 3. Gutenberg-Galaxis. 4. Elektronisches Zeitalter." },
+            { q: "Wie funktioniert die Dynamik eines Mediums laut McLuhans Grafik?", a: "Ein Medium verstärkt das Hören/Orale, verdrängt Druck/Schrift, holt das gesprochene Wort zurück und schlägt um ins Fernsehen." },
+            { q: "Welche Kritik gibt es an McLuhans Medientheorie?", a: "Unscharfer Medienbegriff (alles wird zum Medium), Ignoranz der Koexistenz von Medienkulturen, Fokus nur auf Schrift/Druck, keine empirische Grundlage und nicht eingelöste Heilsversprechen." },
+
+            // --- BILD & BILDANTHROPOLOGIE ---
+            { q: "Wie unterscheidet man das manifeste vom mentalen Bild?", a: "Das manifeste Bild ist vergegenständlicht. Das mentale Bild entsteht in den Köpfen und in unserer Vorstellung." },
+            { q: "Welche 5 Merkmale hat 'Das Bildliche'?", a: "1. Begrenzung (Rand). 2. Komposition (Detail/Ganzes). 3. Nicht-Lineare Anordnung. 4. Direktheit. 5. Konvention (Verstehen ist kulturabhängig)." },
+            { q: "Was ist Ikonografie?", a: "Eine wissenschaftliche Methode, die die visuelle Sprache der Darstellung in der Kunst definiert." },
+            { q: "Wie entwickelten sich Bilder von der Moderne bis zur KI?", a: "Moderne: weg von Nachahmung, hin zu Abstraktion. Massenmedial: Bilderflut entwertet das Einzelbild. Digital: in Raster codiert und bearbeitbar. Dubitativ: Zweifel an Glaubwürdigkeit durch Manipulation. KI-generiert: Gefahr für Fake News." },
+            { q: "Was besagt die Bildanthropologie von Hans Belting?", a: "Ein Bild ist mental, braucht aber ein Medium als Trägerfläche, um sich zu materialisieren. Bilder gibt es nicht körperlos oder medienlos." },
+            { q: "Warum verehrte man in der Vergangenheit Bilder?", a: "Um Personen zu vertreten, die abwesend (Kaiser) oder unsichtbar (Gott) waren, was teilweise im Bilderstreit eskalierte." },
+            { q: "Was meint Hans Belting mit 'doppelter Prägung'?", a: "Bilder werden durch unsere 'individuelle Verfasstheit' (Körper, Lebensgeschichte) und durch 'kollektive Praxis' (kulturelle/mediale Einflüsse) geprägt." },
+            { q: "Wie verändern globale Bildnetze unsere Bilder?", a: "Sie verändern die kollektive Bildpraxis, lassen das Hier und Jetzt verschwinden und machen den Bildhaushalt anonym." },
+            { q: "Was unterscheidet das kommunikative vom kulturellen Gedächtnis (nach Assmann)?", a: "Kommunikativ: alltägliche Erinnerungen über ca. drei Generationen. Kulturell: symbolische Erinnerungen, die über Jahrhunderte hinweg bestehen." },
+            { q: "Worum geht es in Beltings Artikel 'Erinner dich!'?", a: "Dass Kunst und Bilder Träger von Erinnerungen sind. Er analysiert dies interdisziplinär im Wandel der Zeit und im religiösen Kontext (Ikonen)." },
+
+            // --- CELEBRITY CULTURES ---
+            { q: "Was unterscheidet klassische Stars von Celebrities?", a: "Ein Star entstand im künstlerischen Bereich (Film/TV). Eine Celebrity erlangt Aufmerksamkeit durch Selbstdarstellung auf Social Media, hat kein echtes Werk und ist oft 'famous for being famous'." },
+            { q: "Was kennzeichnet MEGA-Stars?", a: "Mediale Omnipräsenz (Steigerungslogik), große PR-Maschinerie und das Verdrängen von 'kleinen Namen'. Dies führt zum ökonomischen Prekariat vieler Musiker und einem Teufelskreis der Aufmerksamkeitsökonomie." },
+            { q: "Was bewirken Celebrities in der Gesellschaft?", a: "Sie bilden Gemeinschaften, gestalten soziales und rituelles Handeln und verändern Medienpraktiken durch mehr Authentizität, Intimität und Nähe ('culture of connectivity')." },
+            { q: "Was sind Micro-Celebrities?", a: "Ein Phänomen sozialer Medien, hervorgebracht durch vernetztes Schreiben (Teilen, Kommentieren von Memes). Sie sind oft 'lächerliche Stars', die Gewöhnliches und Außerordentliches verbinden." },
+
+            // --- SUSAN SONTAG ---
+            { q: "Warum sind Fotografien laut Susan Sontag kein unwiderlegbares Beweismaterial?", a: "Weil sie selektiv und interpretativ sind. Sie sind keine absoluten Aussagen, sondern nur 'Bruchstücke der Welt', denen ohne Kontext ein falsches Verständnis droht." },
+            { q: "Was meint Sontag mit 'Jedem Zücken der Kamera wohnt Aggressivität inne'?", a: "Das Auswählen von Bildausschnitt und Perspektive ist bereits Gewalt. Abgebildetes Leid ist nur Empathie aus Sicht des Fotografen; selbst bei Selfies raubt man sich einen Teil des Selbst." },
+            { q: "Wie helfen Fotos dem Menschen, Besitz von einer unsicheren Umwelt zu ergreifen?", a: "Indem sie Vergängliches festhalten (z. B. Fotoalben) und Unbekanntes im Tourismus fotografiert wird, um sich damit vertraut zu machen." },
+            { q: "Was ist die 'chronisch voyeuristische Beziehung' der Fotografie zur Welt?", a: "Alle Ereignisse (Elend, süße Katzen, Urlaub) werden mit demselben Mittel festgehalten, wodurch die Bedeutung der Ereignisse eingeebnet und gleichbehandelt wird." },
+            { q: "Warum ist Fotografieren laut Sontag ein Akt der 'Nicht-Einmischung' und 'räuberisch'?", a: "Der Fotograf ist passiv; wer berichtet, kann nicht eingreifen. Es ist räuberisch, weil die Kamera eine Waffe ist, die Menschen zu Objekten macht und sie in Momenten einfängt, wie sie sich selbst nie sehen würden." },
+            { q: "Warum ist jede Fotografie ein 'momento mori'?", a: "Weil sie Momentaufnahmen unsterblich macht, uns aber gleichzeitig an Sterblichkeit, Veränderungen und die Vergänglichkeit erinnert." },
+            { q: "Warum sind Fotos einprägsamer als bewegte Bilder (Video)?", a: "Weil ein Foto als ewiger, isolierter Moment länger analysiert wird und sich ins Gedächtnis einbrennen kann." },
+            { q: "Was meint Sontag mit 'Bilder lähmen, Bilder betäuben'?", a: "Das ständige Sehen von Bildern führt zur Abstumpfung und Überforderung. Der Betrachter wird passiv, wodurch eine aktive Reaktion/Einmischung oft abgeschwächt ausfällt." },
+            { q: "Worin liegt der Reiz und die Herausforderung von Fotografien?", a: "Gerade in ihrer Stummheit und in dem, was auf ihnen nur hypothetisch verstehbar ist." }
+        ];
+
+        let currentCards = [...originalCards];
+        let currentIndex = 0;
+        let isAnimating = false;
+
+        const cardContainer = document.getElementById('cardContainer');
+        const statusText = document.getElementById('statusText');
+        const endMessage = document.getElementById('endMessage');
+        const shuffleToggle = document.getElementById('shuffleToggle');
+        const animToggle = document.getElementById('animToggle');
+        const btnWrong = document.getElementById('btnWrong');
+        const btnCorrect = document.getElementById('btnCorrect');
+
+        function updateStatus() {
+            if (currentIndex >= currentCards.length) {
+                statusText.innerText = "Alle Karten gelernt!";
+                endMessage.style.display = "block";
+            } else {
+                statusText.innerText = `Karte ${currentIndex + 1} / ${currentCards.length}`;
+                endMessage.style.display = "none";
+            }
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        shuffleToggle.addEventListener('change', (e) => {
+            currentIndex = 0;
+            if(e.target.checked) {
+                currentCards = [...originalCards];
+                shuffleArray(currentCards);
+            } else {
+                currentCards = [...originalCards];
+            }
+            renderCard();
+        });
+
+        animToggle.addEventListener('change', (e) => {
+            const btns = document.querySelectorAll('.btn');
+            btns.forEach(btn => btn.classList.toggle('animated', e.target.checked));
+            renderCard(); 
+        });
+
+        function renderCard() {
+            const existingCard = document.querySelector('.card');
+            if (existingCard) {
+                existingCard.remove();
+            }
+
+            if (currentIndex >= currentCards.length) {
+                updateStatus();
+                return;
+            }
+
+            const data = currentCards[currentIndex];
+            const useAnim = animToggle.checked;
+
+            const card = document.createElement('div');
+            card.className = `card ${useAnim ? 'animated' : ''}`;
+            
+            card.innerHTML = `
+                <div class="card-inner">
+                    <div class="card-front">${data.q}</div>
+                    <div class="card-back">${data.a}</div>
+                </div>
+            `;
+
+            card.addEventListener('click', () => {
+                if(!isAnimating) card.classList.toggle('flipped');
+            });
+
+            let startX = 0;
+            let currentX = 0;
+            let isDragging = false;
+
+            card.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].clientX;
+                isDragging = true;
+                if(useAnim) card.querySelector('.card-inner').style.transition = 'none';
+            });
+
+            card.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                currentX = e.touches[0].clientX;
+                const deltaX = currentX - startX;
+                const rotation = deltaX * 0.05;
+                
+                if(useAnim) {
+                    card.style.transform = `translate(${deltaX}px, 0) rotate(${rotation}deg)`;
+                    
+                    const inner = card.querySelector('.card-inner');
+                    if(deltaX > 50) inner.style.boxShadow = "0 10px 30px rgba(76, 175, 80, 0.5)"; 
+                    else if(deltaX < -50) inner.style.boxShadow = "0 10px 30px rgba(244, 67, 54, 0.5)"; 
+                    else inner.style.boxShadow = "0 10px 20px rgba(0,0,0,0.1)";
+                }
+            });
+
+            card.addEventListener('touchend', (e) => {
+                if (!isDragging) return;
+                isDragging = false;
+                const deltaX = currentX - startX;
+
+                if(useAnim) card.querySelector('.card-inner').style.transition = 'transform 0.5s';
+
+                if (Math.abs(deltaX) > 100 && currentX !== 0) {
+                    handleSwipe(deltaX > 0 ? 'right' : 'left', card);
+                } else {
+                    if(useAnim) {
+                        card.style.transform = `translate(0px, 0px) rotate(0deg)`;
+                        card.querySelector('.card-inner').style.boxShadow = "0 10px 20px rgba(0,0,0,0.1)";
+                    }
+                }
+                currentX = 0;
+            });
+
+            cardContainer.appendChild(card);
+            updateStatus();
+        }
+
+        function handleSwipe(direction, cardElement) {
+            if(isAnimating || currentIndex >= currentCards.length) return;
+            isAnimating = true;
+            const useAnim = animToggle.checked;
+
+            if(useAnim) {
+                const moveOutWidth = document.body.clientWidth;
+                const endX = direction === 'right' ? moveOutWidth : -moveOutWidth;
+                cardElement.style.transition = 'transform 0.4s ease-out, opacity 0.4s';
+                cardElement.style.transform = `translate(${endX}px, 0) rotate(${direction === 'right' ? 30 : -30}deg)`;
+                cardElement.style.opacity = '0';
+                
+                setTimeout(() => {
+                    nextCard();
+                }, 400);
+            } else {
+                nextCard();
+            }
+        }
+
+        function nextCard() {
+            currentIndex++;
+            isAnimating = false;
+            renderCard();
+        }
+
+        btnWrong.addEventListener('click', () => {
+            const card = document.querySelector('.card');
+            if(card) handleSwipe('left', card);
+        });
+
+        btnCorrect.addEventListener('click', () => {
+            const card = document.querySelector('.card');
+            if(card) handleSwipe('right', card);
+        });
+
+        // App starten
+        renderCard();
+
+    </script>
+</body>
+</html>
