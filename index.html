@@ -9,9 +9,24 @@
             --primary: #4A90E2;
             --success: #4CAF50;
             --danger: #F44336;
+            
+            /* Light Mode Colors */
             --bg: #f4f7f6;
+            --header-bg: #ffffff;
             --card-bg: #ffffff;
             --text: #333333;
+            --card-text: #444444;
+            --shadow: rgba(0,0,0,0.1);
+        }
+
+        /* Dark Mode Colors */
+        body.dark-mode {
+            --bg: #121212;
+            --header-bg: #1e1e1e;
+            --card-bg: #242424;
+            --text: #e0e0e0;
+            --card-text: #cccccc;
+            --shadow: rgba(0,0,0,0.5);
         }
 
         * {
@@ -29,41 +44,44 @@
             flex-direction: column;
             overflow: hidden;
             touch-action: none;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         header {
-            padding: 15px 20px;
-            background: white;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 15px 15px;
+            background: var(--header-bg);
+            box-shadow: 0 2px 10px var(--shadow);
             display: flex;
             justify-content: space-between;
             align-items: center;
             z-index: 10;
+            transition: background-color 0.3s;
         }
 
         .header-title {
             font-weight: bold;
-            font-size: 18px;
+            font-size: 16px;
         }
 
         .settings {
             display: flex;
-            gap: 15px;
+            gap: 10px;
         }
 
         .toggle-group {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 5px;
-            font-size: 12px;
+            gap: 2px;
+            font-size: 10px;
             font-weight: bold;
         }
 
         .switch {
             position: relative;
             display: inline-block;
-            width: 40px;
-            height: 20px;
+            width: 36px;
+            height: 18px;
         }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider {
@@ -77,14 +95,14 @@
         .slider:before {
             position: absolute;
             content: "";
-            height: 16px; width: 16px;
+            height: 14px; width: 14px;
             left: 2px; bottom: 2px;
             background-color: white;
             border-radius: 50%;
             transition: .4s;
         }
         input:checked + .slider { background-color: var(--primary); }
-        input:checked + .slider:before { transform: translateX(20px); }
+        input:checked + .slider:before { transform: translateX(18px); }
 
         .card-container {
             flex-grow: 1;
@@ -112,7 +130,7 @@
             position: relative;
             transform-style: preserve-3d;
             border-radius: 20px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 20px var(--shadow);
         }
 
         .card.animated .card-inner {
@@ -133,11 +151,12 @@
             align-items: center;
             padding: 25px;
             text-align: center;
-            font-size: 20px;
+            font-size: 18px;
             background: var(--card-bg);
             border-radius: 20px;
             border: 2px solid transparent;
             overflow-y: auto;
+            transition: background-color 0.3s;
         }
 
         .card-front {
@@ -147,9 +166,9 @@
 
         .card-back {
             transform: rotateY(180deg);
-            font-size: 16px;
-            line-height: 1.5;
-            color: #444;
+            font-size: 15px;
+            line-height: 1.4;
+            color: var(--card-text);
             align-items: flex-start;
             text-align: left;
         }
@@ -168,7 +187,7 @@
             border: none;
             font-size: 30px;
             color: white;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 5px 15px var(--shadow);
             cursor: pointer;
             display: flex;
             justify-content: center;
@@ -198,7 +217,7 @@
             text-align: center;
             font-size: 24px;
             font-weight: bold;
-            color: #555;
+            color: var(--text);
             padding: 20px;
             display: none;
         }
@@ -210,14 +229,21 @@
         <div class="header-title">Mediensack</div>
         <div class="settings">
             <div class="toggle-group">
-                Zufall
+                <span>Dark</span>
+                <label class="switch">
+                    <input type="checkbox" id="darkToggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="toggle-group">
+                <span>Zufall</span>
                 <label class="switch">
                     <input type="checkbox" id="shuffleToggle">
                     <span class="slider"></span>
                 </label>
             </div>
             <div class="toggle-group">
-                Animation
+                <span>Anim.</span>
                 <label class="switch">
                     <input type="checkbox" id="animToggle" checked>
                     <span class="slider"></span>
@@ -230,7 +256,7 @@
 
     <div class="card-container" id="cardContainer">
         <div class="end-message" id="endMessage">
-            🎉 Geschafft!<br><br>
+            🎉 Alle gelernt!<br><br>
             <button onclick="location.reload()" style="padding: 10px 20px; font-size: 16px; border-radius: 8px; border: none; background: var(--primary); color: white; margin-top: 20px;">Neustart</button>
         </div>
     </div>
@@ -274,6 +300,7 @@
 
             // --- BRD-MEDIEN-SYSTEM ---
             { q: "Welche Rolle spielen Nachrichten- und Mediaagenturen?", a: "Nachrichtenagenturen (staatsfern) verifizieren und selektieren News. Mediaagenturen finanzieren deutsche Medien, verwalten 90% des Werbebudgets und planen Werbung." },
+            { q: "Wie sind Telekommunikationsnetze in Deutschland aufgeteilt?", a: "Digital (Breitbandkabel, UKW, Satellit, terrestrisch, IP). Kabelnetze haben 4 Regionalmonopole, Satellitenrundfunk läuft über SES-Astra/Eutelsat, terrestrisch über die Deutsche Telekom AG." },
             { q: "Was sind die aktuellen Herausforderungen für Zeitungen?", a: "Das traditionelle Geschäftsmodell (Koppelung Leser-/Werbemarkt) zerbricht. Sinkende Auflagen und Erlöse führen zu steigender Abhängigkeit von der Werbewirtschaft, da Leute länger am Handy sind." },
             { q: "Wie ist der Buch- und Zeitschriftenmarkt strukturiert?", a: "Das Buch ist das älteste technische Kommunikationsmedium und ein Kulturgut. Zeitschriften bilden einen extrem heterogenen Markt (ca. 1.500 Titel), der von großen Verlagen dominiert wird, jedoch stark sinkende Auflagen hat." },
             { q: "Wie funktionieren Film und Rundfunk in Deutschland?", a: "Film braucht viel Kapital, hat hohe Risiken und ist auf Förderung angewiesen; US-Majors dominieren den Kinomarkt. Rundfunk teilt sich in staatsfernen, beitragsfinanzierten Öffentlich-Rechtlichen und werbefinanzierten privaten Rundfunk auf." },
@@ -282,10 +309,12 @@
 
             // --- POLITIK & DEMOKRATIE ---
             { q: "Welche Aufgaben haben Medien für die Demokratie?", a: "Herstellen von Öffentlichkeit, Information/Meinungsbildung, Bildung/Unterhaltung, Kritik/Kontrolle sowie Partizipation." },
+            { q: "Welche Bedeutung haben Soziale Medien in der politischen Kommunikation?", a: "Sie sind zentral für Meinungsbildung und Mobilisierung. Verbreiten schnell Infos, aber bergen Gefahren wie Filterblasen, Fake News und Polarisierung. Influencer spielen eine wichtige Rolle und die Regulierung von Desinformation ist essenziell." },
             { q: "Was besagt das 'Arenamodell' in der politischen Kommunikation?", a: "Politische Akteure kommunizieren über Medien direkt mit Bürgern, um sich zu legitimieren. Dadurch werden klassische journalistische Gatekeeper umgangen und es kommt zu einer Machtverschiebung (z.B. hin zu Influencern)." },
-            { q: "Welche Herausforderungen bringt politische Kommunikation in sozialen Medien?", a: "Filterblasen, Fake News, Desinformations-/Hasskampagnen (Dark-Ads), unethisches Handeln und die Frage, ob Hashtag-Aktivismus wirklichen sozialen Impact hat ('zero social impact')." },
+            { q: "Welche Herausforderungen bringt politische Kommunikation im Netz sonst noch?", a: "Desinformations-/Hasskampagnen (Dark-Ads), unethisches Handeln und die Frage, ob Hashtag-Aktivismus wirklichen sozialen Impact hat ('zero social impact')." },
             { q: "Warum sind Messengerdienste politisch relevant und gefährlich?", a: "Sie sind leistungsfähig, datensparsam und haben eine hohe Reichweite (gut für Mobilisierung). Sie sind aber schwer kontrollierbar, fördern Echokammern und Desinformationskampagnen." },
             { q: "Was versteht man unter 'Informationskrieg' und 'Tiktok-Logik'?", a: "Informationskrieg ist die gezielte Verbreitung von Desinformation zur Destabilisierung und Wahlmanipulation. Die Tiktok-Logik unterstützt das durch kurze Inhalte, die komplexe Themen auf einfache, emotionale Botschaften reduzieren." },
+            { q: "Was sind Leitmedien und warum stehen sie unter Druck?", a: "Traditionelle Medien wie Zeitungen, Fernsehen & Radio. Sie sind wichtig für Meinungsbildung, stehen aber durch den digitalen Wandel und eine fragmentierte Medienlandschaft unter Druck." },
 
             // --- MARSHALL MCLUHAN ---
             { q: "In welche vier Epochen unterteilt Marshall McLuhan die Mediengeschichte?", a: "1. Orale Stammeskultur. 2. Literale Manuskriptkultur. 3. Gutenberg-Galaxis. 4. Elektronisches Zeitalter." },
@@ -298,6 +327,7 @@
             { q: "Was ist Ikonografie?", a: "Eine wissenschaftliche Methode, die die visuelle Sprache der Darstellung in der Kunst definiert." },
             { q: "Wie entwickelten sich Bilder von der Moderne bis zur KI?", a: "Moderne: weg von Nachahmung, hin zu Abstraktion. Massenmedial: Bilderflut entwertet das Einzelbild. Digital: in Raster codiert und bearbeitbar. Dubitativ: Zweifel an Glaubwürdigkeit durch Manipulation. KI-generiert: Gefahr für Fake News." },
             { q: "Was besagt die Bildanthropologie von Hans Belting?", a: "Ein Bild ist mental, braucht aber ein Medium als Trägerfläche, um sich zu materialisieren. Bilder gibt es nicht körperlos oder medienlos." },
+            { q: "Welche Arten von Bildern unterscheidet die Bildanthropologie neben dem medialen Bild?", a: "Innere (er-innerte) Bilder aus Vorstellungen, äußere (wahr-genommene) Bilder aus der Umwelt und Bilder einer Gemeinschaft (gemeinsame Symbole zur Kommunikation)." },
             { q: "Warum verehrte man in der Vergangenheit Bilder?", a: "Um Personen zu vertreten, die abwesend (Kaiser) oder unsichtbar (Gott) waren, was teilweise im Bilderstreit eskalierte." },
             { q: "Was meint Hans Belting mit 'doppelter Prägung'?", a: "Bilder werden durch unsere 'individuelle Verfasstheit' (Körper, Lebensgeschichte) und durch 'kollektive Praxis' (kulturelle/mediale Einflüsse) geprägt." },
             { q: "Wie verändern globale Bildnetze unsere Bilder?", a: "Sie verändern die kollektive Bildpraxis, lassen das Hier und Jetzt verschwinden und machen den Bildhaushalt anonym." },
@@ -331,8 +361,18 @@
         const endMessage = document.getElementById('endMessage');
         const shuffleToggle = document.getElementById('shuffleToggle');
         const animToggle = document.getElementById('animToggle');
+        const darkToggle = document.getElementById('darkToggle');
         const btnWrong = document.getElementById('btnWrong');
         const btnCorrect = document.getElementById('btnCorrect');
+
+        // Dark Mode Logic
+        darkToggle.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                document.body.classList.add('dark-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+            }
+        });
 
         function updateStatus() {
             if (currentIndex >= currentCards.length) {
@@ -418,7 +458,7 @@
                     const inner = card.querySelector('.card-inner');
                     if(deltaX > 50) inner.style.boxShadow = "0 10px 30px rgba(76, 175, 80, 0.5)"; 
                     else if(deltaX < -50) inner.style.boxShadow = "0 10px 30px rgba(244, 67, 54, 0.5)"; 
-                    else inner.style.boxShadow = "0 10px 20px rgba(0,0,0,0.1)";
+                    else inner.style.boxShadow = "0 10px 20px var(--shadow)";
                 }
             });
 
@@ -434,7 +474,7 @@
                 } else {
                     if(useAnim) {
                         card.style.transform = `translate(0px, 0px) rotate(0deg)`;
-                        card.querySelector('.card-inner').style.boxShadow = "0 10px 20px rgba(0,0,0,0.1)";
+                        card.querySelector('.card-inner').style.boxShadow = "0 10px 20px var(--shadow)";
                     }
                 }
                 currentX = 0;
@@ -448,6 +488,19 @@
             if(isAnimating || currentIndex >= currentCards.length) return;
             isAnimating = true;
             const useAnim = animToggle.checked;
+
+            if (direction === 'left') {
+                // Wenn falsch beantwortet, Karte weiter hinten in den Stapel mischen
+                const cardsRemaining = currentCards.length - 1 - currentIndex;
+                if (cardsRemaining > 0) {
+                    // Zufällige Position irgendwo nach der aktuellen Karte
+                    const insertIndex = currentIndex + 1 + Math.floor(Math.random() * cardsRemaining);
+                    currentCards.splice(insertIndex, 0, currentCards[currentIndex]);
+                } else {
+                    // Wenn es die letzte Karte war, einfach hinten dranhängen
+                    currentCards.push(currentCards[currentIndex]);
+                }
+            }
 
             if(useAnim) {
                 const moveOutWidth = document.body.clientWidth;
